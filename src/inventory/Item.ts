@@ -1,5 +1,5 @@
 import { Sprite, Container, Loader, Graphics } from "pixi.js";
-import { InventoryGridOptions } from "./InventoryGrid";
+import { InventoryGridOptions, InventoryGrid } from "./InventoryGrid";
 import { scaleSprite } from "../util/pixiUtils";
 const loader = Loader.shared
 

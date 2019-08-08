@@ -35,11 +35,11 @@ export class InventoryGrid extends Container {
     const item = new Item(options)
     item.fitToGrid(this.options)
 
+
     const spot = findSpot(item.options, this)
 
     if (spot.found) {
       item.options.gridLoc = spot.position
-      console.log(spot)
     }
 
     if (item.options.gridLoc) {
@@ -48,12 +48,11 @@ export class InventoryGrid extends Container {
       this.addChild(item)
       this.items.push(item)
       this.updateOccupied()
+      this.draggingSetup(item)
     }
   }
 
   private updateOccupied() {
-    this.occupied = []
-
     for (let x = 0; x < this.options.width; x++) {
       this.occupied[x] = []
       for (let y = 0; y < this.options.height; y++) {
@@ -65,11 +64,45 @@ export class InventoryGrid extends Container {
       for (let x = 0; x < item.options.width; x++) {
         for (let y = 0; y < item.options.height; y++) {
           if (item.options.gridLoc) {
-            this.occupied[item.options.gridLoc.x + item.options.width][item.options.gridLoc.y + item.options.height] = true
+            this.occupied[item.options.gridLoc.x + x][item.options.gridLoc.y + y] = true
           }
         }
       }
     })
+  }
+
+  private draggingSetup(item: Item) {
+    item.interactive = true
+    item.buttonMode = true
+
+    item
+      .on('pointerdown', onDragStart)
+      .on('pointerup', onDragEnd)
+      .on('pointerupoutside', onDragEnd)
+      .on('pointermove', onDragMove)
+
+    function onDragStart(event: PIXI.interaction.InteractionEvent) {
+      console.log(event)
+      item.dragData = event.data;
+      item.alpha = 0.5;
+      item.dragging = true;
+    }
+
+    function onDragEnd() {
+      item.alpha = 1;
+      item.dragging = false;
+      // set the interaction data to null
+      item.dragData = null;
+    }
+
+    function onDragMove() {
+      if (item.dragging) {
+        const newPosition = item.dragData.getLocalPosition(item.parent);
+        item.x = newPosition.x;
+        item.y = newPosition.y;
+      }
+    }
+
   }
 }
 
