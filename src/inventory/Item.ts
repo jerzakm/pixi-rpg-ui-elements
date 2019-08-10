@@ -7,6 +7,7 @@ export class Item extends Container {
   options: ItemOptions
   dragging: boolean
   sprite?: Sprite
+  dragData?: PIXI.interaction.InteractionData | null
 
   constructor(options: ItemOptions) {
     super()

@@ -81,11 +81,17 @@ export class InventoryGrid extends Container {
       .on('pointerupoutside', onDragEnd)
       .on('pointermove', onDragMove)
 
+    let dragOffset = {
+      x: 0,
+      y: 0
+    }
+
     function onDragStart(event: PIXI.interaction.InteractionEvent) {
       console.log(event)
       item.dragData = event.data;
       item.alpha = 0.5;
       item.dragging = true;
+      dragOffset = event.data.getLocalPosition(item)
     }
 
     function onDragEnd() {
@@ -96,10 +102,10 @@ export class InventoryGrid extends Container {
     }
 
     function onDragMove() {
-      if (item.dragging) {
-        const newPosition = item.dragData.getLocalPosition(item.parent);
-        item.x = newPosition.x;
-        item.y = newPosition.y;
+      if (item.dragging && item.dragData) {
+        const newPosition = item.dragData.getLocalPosition(item.parent)
+        item.position.x = newPosition.x - dragOffset.x
+        item.position.y = newPosition.y - dragOffset.y
       }
     }
 
