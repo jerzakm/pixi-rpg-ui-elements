@@ -1,6 +1,6 @@
 import { Container, Graphics, Loader } from "pixi.js"
 import { Item, ItemOptions, Position } from "./Item"
-import { itemFits, findSpot } from "./inventoryGridUtils";
+import { findSpot } from "./inventoryGridUtils";
 const loader = Loader.shared
 
 export class InventoryGrid extends Container {
@@ -8,11 +8,15 @@ export class InventoryGrid extends Container {
   grid: Graphics
   items: Item[]
   occupied: boolean[][]
+  dragHighlight: Graphics
 
   constructor(options: InventoryGridOptions) {
     super()
     this.options = options
     this.grid = new Graphics()
+    this.dragHighlight = new Graphics()
+    this.addChild(this.dragHighlight)
+
     this.addChild(this.grid)
     this.renderGrid()
     this.items = [] //todo - state preservation and loading
@@ -81,13 +85,15 @@ export class InventoryGrid extends Container {
       .on('pointerupoutside', onDragEnd)
       .on('pointermove', onDragMove)
 
+    const dragHighlight: Graphics = this.dragHighlight
+    const inventory = this
+
     let dragOffset = {
       x: 0,
       y: 0
     }
 
     function onDragStart(event: PIXI.interaction.InteractionEvent) {
-      console.log(event)
       item.dragData = event.data;
       item.alpha = 0.5;
       item.dragging = true;
@@ -95,6 +101,7 @@ export class InventoryGrid extends Container {
     }
 
     function onDragEnd() {
+      dragHighlight.clear()
       item.alpha = 1;
       item.dragging = false;
       // set the interaction data to null
@@ -106,6 +113,10 @@ export class InventoryGrid extends Container {
         const newPosition = item.dragData.getLocalPosition(item.parent)
         item.position.x = newPosition.x - dragOffset.x
         item.position.y = newPosition.y - dragOffset.y
+
+        dragHighlight.clear()
+        dragHighlight.beginFill(0xAAFF12, 0.5)
+        dragHighlight.drawRect(item.position.x, item.position.y, item.options.width * inventory.options.size, item.options.height * inventory.options.size)
       }
     }
 
