@@ -1,7 +1,8 @@
 import { Container, Graphics, Loader } from "pixi.js"
 import { Item, ItemOptions, Position } from "./Item"
-import { findSpot } from "./inventoryGridUtils";
+import { findSpot, itemFits } from "./inventoryGridUtils";
 const loader = Loader.shared
+const uuidv4 = require('uuid/v4')
 
 export class InventoryGrid extends Container {
   options: InventoryGridOptions
@@ -35,14 +36,17 @@ export class InventoryGrid extends Container {
     }
   }
 
-  public putItem(options: ItemOptions) {
+  public putItem(options: ItemOptions, gridLoc?: Position) {
     const item = new Item(options)
     item.fitToGrid(this.options)
 
 
     const spot = findSpot(item.options, this)
 
-    if (spot.found) {
+    if (gridLoc) {
+      item.options.gridLoc = gridLoc
+    }
+    else if (spot.found) {
       item.options.gridLoc = spot.position
     }
 
@@ -53,6 +57,7 @@ export class InventoryGrid extends Container {
       this.items.push(item)
       this.updateOccupied()
       this.draggingSetup(item)
+      item.uuid = uuidv4()
     }
   }
 
@@ -93,19 +98,36 @@ export class InventoryGrid extends Container {
       y: 0
     }
 
+    let fits = true
+
+    const startGridLoc = item.options.gridLoc
+    let newGridLoc = item.options.gridLoc
+
     function onDragStart(event: PIXI.interaction.InteractionEvent) {
       item.dragData = event.data;
       item.alpha = 0.5;
       item.dragging = true;
       dragOffset = event.data.getLocalPosition(item)
+
+      const filtered = inventory.items.findIndex(i => i.uuid == item.uuid)
+      if (filtered > -1) {
+        inventory.items.splice(filtered)
+        inventory.updateOccupied()
+      }
     }
 
     function onDragEnd() {
       dragHighlight.clear()
-      item.alpha = 1;
-      item.dragging = false;
-      // set the interaction data to null
-      item.dragData = null;
+      item.alpha = 1
+      item.dragging = false
+      item.dragData = null
+      if (fits) {
+        inventory.putItem(item.options, newGridLoc)
+        inventory.removeChild(item)
+      } else {
+        inventory.putItem(item.options, startGridLoc)
+        inventory.removeChild(item)
+      }
     }
 
     function onDragMove() {
@@ -114,12 +136,23 @@ export class InventoryGrid extends Container {
         item.position.x = newPosition.x - dragOffset.x
         item.position.y = newPosition.y - dragOffset.y
 
+        newGridLoc = inventory.pixelGridPosition({ x: item.position.x, y: item.position.y })
+        fits = itemFits(item.options, inventory, newGridLoc)
+
         dragHighlight.clear()
-        dragHighlight.beginFill(0xAAFF12, 0.5)
+
+        fits ? dragHighlight.beginFill(0xAAFF12, 0.5) : dragHighlight.beginFill(0xFFaa12, 0.5)
         dragHighlight.drawRect(item.position.x, item.position.y, item.options.width * inventory.options.size, item.options.height * inventory.options.size)
       }
     }
 
+  }
+
+  pixelGridPosition(position: Position) {
+    return {
+      x: Math.floor(position.x / this.options.size),
+      y: Math.floor(position.y / this.options.size)
+    }
   }
 }
 

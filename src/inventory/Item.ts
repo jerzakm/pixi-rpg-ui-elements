@@ -4,6 +4,7 @@ import { scaleSprite } from "../util/pixiUtils";
 const loader = Loader.shared
 
 export class Item extends Container {
+  uuid?: string
   options: ItemOptions
   dragging: boolean
   sprite?: Sprite
