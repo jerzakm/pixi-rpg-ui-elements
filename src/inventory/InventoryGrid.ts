@@ -10,12 +10,15 @@ export class InventoryGrid extends Container {
   items: Item[]
   occupied: boolean[][]
   dragHighlight: Graphics
+  debug: Graphics
 
   constructor(options: InventoryGridOptions) {
     super()
     this.options = options
     this.grid = new Graphics()
     this.dragHighlight = new Graphics()
+    this.debug = new Graphics()
+    this.addChild(this.debug)
     this.addChild(this.dragHighlight)
 
     this.addChild(this.grid)
@@ -55,9 +58,9 @@ export class InventoryGrid extends Container {
       item.position.y = item.options.gridLoc.y * this.options.size
       this.addChild(item)
       this.items.push(item)
-      this.updateOccupied()
       this.draggingSetup(item)
       item.uuid = uuidv4()
+      this.updateOccupied()
     }
   }
 
@@ -111,9 +114,10 @@ export class InventoryGrid extends Container {
 
       const filtered = inventory.items.findIndex(i => i.uuid == item.uuid)
       if (filtered > -1) {
-        inventory.items.splice(filtered)
-        inventory.updateOccupied()
+        inventory.items.splice(filtered, 1)
       }
+      inventory.updateOccupied()
+      inventory.updateOccupiedDebug()
     }
 
     function onDragEnd() {
@@ -128,10 +132,13 @@ export class InventoryGrid extends Container {
         inventory.putItem(item.options, startGridLoc)
         inventory.removeChild(item)
       }
+      inventory.updateOccupied()
+      inventory.updateOccupiedDebug()
     }
 
     function onDragMove() {
       if (item.dragging && item.dragData) {
+        inventory.updateOccupiedDebug()
         const newPosition = item.dragData.getLocalPosition(item.parent)
         item.position.x = newPosition.x - dragOffset.x
         item.position.y = newPosition.y - dragOffset.y
@@ -146,6 +153,18 @@ export class InventoryGrid extends Container {
       }
     }
 
+  }
+
+  private updateOccupiedDebug() {
+    this.debug.clear()
+    for (let y = 0; y < this.options.height; y++) {
+      for (let x = 0; x < this.options.width; x++) {
+        const color = this.occupied[x][y] ? 0xEE9912 : 0x99EE00
+        this.debug.beginFill(color, 0.2)
+        this.debug.drawRect(x * this.options.size, y * this.options.size, this.options.size, this.options.size)
+        this.debug.endFill()
+      }
+    }
   }
 
   pixelGridPosition(position: Position) {
